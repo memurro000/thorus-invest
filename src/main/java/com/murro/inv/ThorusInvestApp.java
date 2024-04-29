@@ -1,103 +1,41 @@
 package com.murro.inv;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.murro.inv.config.RepoConfig;
+import com.murro.inv.model.Subscriber;
+import com.murro.inv.repo.WIrer;
+import jakarta.xml.bind.JAXBException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.web.socket.WebSocketHandler;
-import org.springframework.web.socket.WebSocketHttpHeaders;
-import org.springframework.web.socket.client.WebSocketClient;
-import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.context.annotation.*;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import com.murro.inv.config.ThorusInvestAppConfiguration;
+import java.net.SocketException;
 
+@Configuration
+@Import(RepoConfig.class)
+@ComponentScan(basePackages = "com.murro.inv")
 public class ThorusInvestApp {
 
-    public static void main(String[] args) {
-        
-        ApplicationContext context = 
-            new AnnotationConfigApplicationContext
-                (ThorusInvestAppConfiguration.class);
+    public static final String URI = "";
 
-        WebSocketClient stdClient = new StandardWebSocketClient();
+    public static void main(String[] args) throws TelegramApiException, SocketException, JAXBException {
 
-        WebSocketHandler handler = context.getBean(MyWSHandler.class);
+        ApplicationContext context =
+                new AnnotationConfigApplicationContext
+                        (ThorusInvestApp.class);
 
-        WebSocketHttpHeaders connectHeaders = new WebSocketHttpHeaders();
-        connectHeaders.add("Connection", "Upgrade");
-        connectHeaders.add("Upgrade", "websocket");
+        WIrer repo = context.getBean(WIrer.class);
 
-        try{
-            stdClient.execute(handler, connectHeaders, 
-                    new URI("wss://stream.bybit.com/v5/public/linear"));
-        }
-        catch(URISyntaxException ex){
-            System.err.println(ex.getMessage());
-        }
+        Subscriber sub = new Subscriber();
+        sub.setId(1L);
+        sub.setTopic("kline.up");
 
+        repo.save(sub);
+    }
 
-
-        for(;;){
-
-        }
-
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
 }
-
-/*
-@AllArgsConstructor
-class MyStompSessionHandler extends StompSessionHandlerAdapter {
-
-    private final MyObjectMapper mapper;
-
-    @Override
-    public void afterConnected
-        (StompSession session, StompHeaders connectedHeaders) {
-        System.err.println("POBEDA");
-        session.subscribe("/topic/kline.1.BTCUSDT", this);
-        ObjectNode request = mapper.createObjectNode();
-        request.put("args", "kline.1.BTCUSDT");
-
-
-        System.out.println(session.toString());
-
-        StompHeaders askHeaders = new StompHeaders(); 
-
-        ArrayList<String> args = new ArrayList<>();
-        args.add("kline.1.BTCUSDT");
-        askHeaders.addAll("args", args);
-
-        System.out.println(session.subscribe(askHeaders, this));
-        //session.send("/app/chat", request);
-    }
-
-    @Override
-    public void handleException
-        (
-            StompSession session, StompCommand command, 
-            StompHeaders headers, byte[] payload, Throwable exception
-        ) {
-        System.err.println("Exception! " + exception.getMessage());
-        System.err.println("on " + session + command + headers);
-    }
-
-    @Override
-    public void handleTransportError(StompSession session, Throwable exception) {
-        throw new UnsupportedOperationException("Transport error! on " + this + session); 
-    }
-
-    @Override
-    public Type getPayloadType(StompHeaders headers) {
-        return String.class;
-    }
-
-    @Override
-    public void handleFrame(StompHeaders headers, Object payload) {
-        Message msg = (Message) payload;
-        System.out.println("RECEIVED" + msg.getPayload().toString());
-    }
-    
-}
-*/

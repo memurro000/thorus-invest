@@ -1,0 +1,7 @@
+data:
+  jpa:
+    jdbc:
+      url: jdbc:postgresql://127.0.0.1:5432/inv_db
+      user: ${PSQL_USERNAME}
+      password: ${PSQL_PASSWORD}
+      packages: com.murro.inv
