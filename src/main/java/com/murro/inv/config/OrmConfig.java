@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.Database;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -19,13 +18,23 @@ import javax.sql.DataSource;
 @EnableTransactionManagement
 @Import(DatabaseConfig.class)
 public class OrmConfig {
+    
+    private String resolve(String property){
+        if(property.charAt(0) == '$'){
+            return System
+                    .getenv(
+                            property.substring(2, property.length() - 1
+                            ));
+        }
+        return property;
+    }
+    
     @Bean("dataSource")
-    DataSource dataSource(DatabaseConfig config){
+    DataSource dataSource(DatabaseConfig databaseConfig){
         HikariConfig dataSourceProps = new HikariConfig();
-        System.out.println(config.getJdbcURL());
-        dataSourceProps.setJdbcUrl(config.getJdbcURL());
-        dataSourceProps.setUsername(config.getUser());
-        dataSourceProps.setPassword(config.getPassword());
+        dataSourceProps.setJdbcUrl(resolve(databaseConfig.getJdbcURL()));
+        dataSourceProps.setUsername(resolve(databaseConfig.getUser()));
+        dataSourceProps.setPassword(resolve(databaseConfig.getPassword()));
         return new HikariDataSource(dataSourceProps);
     }
 
@@ -35,7 +44,8 @@ public class OrmConfig {
             DatabaseConfig databaseConfig
     ){
         HibernateJpaVendorAdapter adapter = new HibernateJpaVendorAdapter();
-        adapter.setDatabase(Database.POSTGRESQL);
+        /* adapter.setDatabase(Database.POSTGRESQL); */
+        /* IS NOT NEEDED TILL DBMS IS CHANGED */
         adapter.setShowSql(false);
         adapter.setGenerateDdl(true);
 

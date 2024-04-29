@@ -4,7 +4,6 @@ com/murro/inv/bybit/api/listener/IMessageListenerForBybit.class
 com/murro/inv/bybit/model/BybitMessagePayload.class
 com/murro/inv/repo/SubscriberRepo.class
 com/murro/inv/config/DatabaseConfig.class
-com/murro/inv/repo/WIrer.class
 com/murro/inv/bybit/api/listener/MessageOutputterForBybit.class
 com/murro/inv/bybit/model/BybitTimeframe.class
 com/murro/inv/ThorusInvestApp.class
