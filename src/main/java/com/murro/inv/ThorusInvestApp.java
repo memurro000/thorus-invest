@@ -1,19 +1,18 @@
 package com.murro.inv;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.murro.inv.bybit.api.BybitWSAPI;
 import com.murro.inv.bybit.api.listener.MessageOutputterForBybit;
 import com.murro.inv.bybit.model.BybitTimeframe;
 import com.murro.inv.bybit.model.BybitTopic;
 import com.murro.inv.config.RepoConfig;
 import com.murro.inv.telegram.api.TelegramBotAPI;
-import jakarta.xml.bind.JAXBException;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
+
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import java.net.SocketException;
-
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
@@ -22,7 +21,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 @ComponentScan(basePackages = "com.murro.inv")
 public class ThorusInvestApp {
 
-    public static void main(String[] args) throws TelegramApiException, SocketException, JAXBException {
+    public static void main(String[] args) {
 
         ApplicationContext context =
                 new AnnotationConfigApplicationContext
@@ -30,9 +29,18 @@ public class ThorusInvestApp {
 
         BybitWSAPI bybit = context.getBean(BybitWSAPI.class);
         TelegramBotAPI tgBot = context.getBean(TelegramBotAPI.class);
-        TelegramBotsApi registration =
-                new TelegramBotsApi(DefaultBotSession.class);
-        registration.registerBot(tgBot);
+
+        TelegramBotsApi registration;
+        try {
+            registration = new TelegramBotsApi(DefaultBotSession.class);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            registration.registerBot(tgBot);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
         tgBot.connect(bybit);
         bybit.subscribe(BybitTopic.KLINE, BybitTimeframe.SECOND_1, "BTCUSDT",
                 context.getBean(MessageOutputterForBybit.class));

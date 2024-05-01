@@ -8,4 +8,8 @@ public class BybitWSAPIException extends RuntimeException{
     public BybitWSAPIException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public BybitWSAPIException(Exception e) {
+        super(e);
+    }
 }

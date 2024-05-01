@@ -1,19 +1,17 @@
 package com.murro.inv.bybit.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.murro.inv.bybit.api.listener.IMessageListenerForBybit;
+import com.murro.inv.bybit.api.util.BybitWSAPIException;
 import com.murro.inv.bybit.model.BybitMessage;
-import com.murro.inv.bybit.model.BybitMessageData;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.jvnet.hk2.component.MultiMap;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
-
-import java.util.HashMap;
 
 @Component
 @Scope("prototype")
@@ -26,40 +24,56 @@ public class BybitWSHandler extends AbstractWebSocketHandler {
     private final MultiMap<String, IMessageListenerForBybit> topicListeners = new MultiMap<>();
     
     @Override
-    public void afterConnectionEstablished(@NotNull WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         super.afterConnectionEstablished(session);
-        System.out.println("CONNECTA");
     }
 
     @Override
-    public void handleMessage(@NotNull WebSocketSession session, @NotNull WebSocketMessage<?> message)
-            throws Exception {
-        System.out.println(message.getPayload());
-        if(message.getClass().equals(PongMessage.class)){
-            System.out.println("SERVER PONGS");
+    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) {
+        try {
+            super.handleMessage(session, message);
+        } catch (Exception e) {
+            throw new BybitWSAPIException(e);
+        }
+    }
+
+    @Override
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+        if((message.getPayload().contains("\"success\":"))){
+            System.out.println(message.getPayload());
             return;
         }
 
-        if(message.getClass().equals(TextMessage.class)){
-            BybitMessage msg = mapper.readValue((String) message.getPayload(), BybitMessage.class);
-            BybitMessageData data;
-            if((data = msg.getData()[0]) != null){
-                for(var x : topicListeners.get(msg.getTopic()))
-                        x.onMessage(msg);
-            }
-            else
-                System.out.println(msg);
+        BybitMessage msg;
+
+        try {
+            msg = mapper.readValue(message.getPayload(), BybitMessage.class);
+        }
+        catch (JsonProcessingException e) {
+            throw new BybitWSAPIException(this + " is dead because of ", e);
         }
 
+        for(var x : topicListeners.get(msg.getTopic()))
+            x.onMessage(msg);
     }
 
     @Override
-    public void handleTransportError(@NotNull WebSocketSession session, @NotNull Throwable exception) {
+    protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
+        System.out.println(message);
+    }
+
+    @Override
+    protected void handlePongMessage(WebSocketSession session, PongMessage message) {
+        System.out.println("SERVER PONGS");
+    }
+
+    @Override
+    public void handleTransportError( WebSocketSession session,  Throwable exception) {
         System.err.println("Exception: " + exception.getMessage() + " occurred on session " + session);
     }
 
     @Override
-    public void afterConnectionClosed(@NotNull WebSocketSession session, @NotNull CloseStatus closeStatus) throws Exception {
+    public void afterConnectionClosed( WebSocketSession session,  CloseStatus closeStatus) {
 
     }
 

@@ -21,4 +21,21 @@ public class BybitMessageData {
     private float turnover;
     private boolean confirm;
     private long timestamp;
+
+    @Override
+    public String toString() {
+        return "BybitMessageData{" +
+                "start=" + start +
+                ", end=" + end +
+                ", interval=" + interval +
+                ", open=" + open +
+                ", close=" + close +
+                ", high=" + high +
+                ", low=" + low +
+                ", volume=" + volume +
+                ", turnover=" + turnover +
+                ", confirm=" + confirm +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }

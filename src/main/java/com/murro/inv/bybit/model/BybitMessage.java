@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Arrays;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,7 +16,16 @@ public class BybitMessage {
     private BybitMessageData[] data;
 
     private String topic;
-    private int ts;
+    private long ts;
     private String type;
 
+    @Override
+    public String toString() {
+        return "BybitMessage{" +
+                "data=" + Arrays.toString(data) +
+                ", topic='" + topic + '\'' +
+                ", ts=" + ts +
+                ", type='" + type + '\'' +
+                '}';
+    }
 }
