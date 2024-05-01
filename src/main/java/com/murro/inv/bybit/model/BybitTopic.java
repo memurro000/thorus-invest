@@ -1,12 +1,14 @@
 package com.murro.inv.bybit.model;
 
+
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@Getter
 @AllArgsConstructor
-public enum BybitTimeframe {
-    SECOND_1 ("1");
+@Getter
+public enum BybitTopic {
+    KLINE ("kline");
 
     private final String title;
 

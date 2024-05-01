@@ -13,5 +13,4 @@ com/murro/inv/bybit/api/BybitWSAPI.class
 com/murro/inv/telegram/api/TelegramBotAPI.class
 com/murro/inv/bybit/api/BybitWSHandler.class
 com/murro/inv/model/Subscriber.class
-com/murro/inv/bybit/api/listener/KlineListenerForBybit.class
 com/murro/inv/config/properties/YamlPropertySourceFactory.class

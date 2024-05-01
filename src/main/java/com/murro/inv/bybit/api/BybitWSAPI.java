@@ -2,8 +2,10 @@ package com.murro.inv.bybit.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.murro.inv.bybit.api.listener.IMessageListenerForBybit;
+import com.murro.inv.bybit.api.util.BybitWSAPIException;
 import com.murro.inv.bybit.model.BybitMessagePayload;
 import com.murro.inv.bybit.model.BybitTimeframe;
+import com.murro.inv.bybit.model.BybitTopic;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,41 +32,49 @@ public final class BybitWSAPI extends StandardWebSocketClient {
     @Autowired(required = false)
     private volatile WebSocketSession session;
 
-    public void connect() throws SocketException {
-        if(session != null)
-            throw new SocketException("Bybit API " + this.hashCode() + " is already connected");
+    private volatile boolean isConnected = false;
+
+    public boolean isConnected(){
+        return isConnected;
+    }
+
+    public void connect() {
+        if(isConnected)
+            throw new BybitWSAPIException(this + " is already connected");
 
         try {
             session = execute(handler, "wss://stream.bybit.com/v5/public/linear").get();
         }
         catch (InterruptedException | ExecutionException e) {
-            System.err.println("Bybit API is unable to connect: " + e.getMessage());
+            throw new BybitWSAPIException(this + " is unable to connect ", e);
         }
+
+        isConnected = true;
     }
 
-    public void subscribeToKline(String symbol, BybitTimeframe timeframe, IMessageListenerForBybit subscriber) {
+    public void subscribe(BybitTopic topic, BybitTimeframe timeframe, String symbol,
+                          IMessageListenerForBybit subscriber
+    ) {
         while (session == null) Thread.onSpinWait();
 
-        String topic = "kline." + timeframe.getTitle() + "." + symbol;
+        String subscriptionDescr = topic + "." + timeframe + "." + symbol;
         BybitMessagePayload payload = new BybitMessagePayload(
-                topic,
+                subscriptionDescr,
                 "subscribe",
-                new String[]{topic}
+                new String[]{subscriptionDescr}
         );
         try {
-            handler.regiterListener(subscriber, topic);
+            handler.regiterListener(subscriber, subscriptionDescr);
             session.sendMessage(new TextMessage(mapper.writeValueAsString(payload)));
         }
         catch (IOException e) {
-            throw new RuntimeException(
-                    "Bybit API is unable to subscribe to kline: \n" + e.getMessage()
-            );
+            throw new BybitWSAPIException("Bybit API is unable to subscribe to kline ", e);
         }
     }
 
     public void close() throws SocketException {
-        if(session == null)
-            throw new SocketException("Bybit API " + this.hashCode() + " is already closed");
+        if(!isConnected && session == null)
+            throw new BybitWSAPIException(this + " is already closed");
 
         try {
             session.close();
@@ -72,6 +82,8 @@ public final class BybitWSAPI extends StandardWebSocketClient {
         } catch (IOException e) {
             System.err.println("Bybit API is unable to close: " + e.getMessage());
         }
+
+        isConnected = false;
     }
 
 }
